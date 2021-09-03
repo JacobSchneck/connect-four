@@ -1,4 +1,9 @@
-#![allow(unused_must_use, unused_assignments, dead_code)]
+#![allow(
+	unused_must_use, 
+	unused_assignments, 
+	dead_code, 
+	unused_variables
+)]
 
 use std::fmt;
 
@@ -80,34 +85,14 @@ impl ConnectFour {
 				// Direction valid --> 
 				// 	if in bounds of board
 				//		if next piece matches prev	
+				// lastly check if draw by checking if no None types are present
 
-				let mut ct = 1;
-
-				// check col first
-				for y in 1..= 3 {
-					if row + y > self.board.len() - 1 ||
-						self.board[row + y][col].is_none() || 
-						self.board[row + y][col].unwrap() != piece { 
-							break; 
-					}
-					ct += 1;
-				}
-
-				for y in 1..=3 {
-					if (row as i32 - y as i32) < 0 ||
-						self.board[row - y][col].is_none() || 
-						self.board[row - y][col].unwrap() != piece { 
-							break; 
-					}
-					ct += 1;
-				}
-
-				if ct >= 4 {
-					return true;
-				} else {
-					ct = 1;
-				}
-
+				
+				// TODO: Implement each directional check (consider placing in seperate util file)
+				if self.check_col(piece, row, col) { return true; }
+				if self.check_row(piece, row, col) { return true }
+				// if self_check_pos_diag(piece, row, col) {return true }
+				// if self_check_neg_diag(piece, row, col) {return true }
 
 			}
 		}
@@ -116,8 +101,82 @@ impl ConnectFour {
 		false
 	}
 
+	fn check_col(&self, piece: Player, row: usize, col: usize) -> bool {
+		// win condition is ct >= 4
+		let mut ct = 1; 
+		
+		// check down direction
+		for y in 1..= 3 {
+			if row + y > self.board.len() - 1 ||
+				self.board[row + y][col].is_none() || 
+				self.board[row + y][col].unwrap() != piece { 
+					break; 
+			}
+			ct += 1;
+		}
+
+		// check up direction
+		for y in 1..=3 {
+			if (row as i32 - y as i32) < 0 ||
+				self.board[row - y][col].is_none() || 
+				self.board[row - y][col].unwrap() != piece { 
+					break; 
+			}
+			ct += 1;
+		}
+
+		// check win condition
+		if ct >= 4 {
+			true
+		} else {
+			false
+		}
+	}
+
+	fn check_row(&self, piece: Player, row: usize, col: usize) -> bool {
+		// win condition is ct >= 4
+		let mut ct = 1; 
+		
+		// check right direction
+		for x in 1..= 3 {
+			if col + x > self.board[row].len() - 1 ||
+				self.board[row][col + x].is_none() || 
+				self.board[row][col + x].unwrap() != piece { 
+					break; 
+			}
+			ct += 1;
+		}
+
+		// check left direction
+		for x in 1..=3 {
+			if (col as i32 - x as i32) < 0 ||
+				self.board[row][col - x].is_none() || 
+				self.board[row][col - x].unwrap() != piece { 
+					break; 
+			}
+			ct += 1;
+		}
+
+		// check win condition
+		if ct >= 4 {
+			true
+		} else {
+			false
+		}
+	}
+
+	fn check_pos_diag(&self, piece: Player, row: usize, col: usize) -> bool {
+		unimplemented!();
+	}
+
+	fn check_neg_diag(&self, piece: Player, row: usize, col: usize) -> bool {
+		unimplemented!();
+	}
+
+
 	fn reset(&mut self) {
 		self.board = vec![vec![None; 7]; 6]; 		
+		self.turn = Player::Red;
 	}
 }
 
@@ -180,8 +239,26 @@ mod test_connect_four {
 		game.take_turn(2); // o
 		assert_eq!(game.take_turn(4), Ok(false)); // x
 		assert_eq!(game.take_turn(2), Ok(true)); // o
-
 		println!("{}", game);
+
+		// does not go out of bounds
+		game.reset();
+		game.take_turn(2); // o
+		game.take_turn(4); // x
+		game.take_turn(2); // o
+		game.take_turn(4); // x
+		game.take_turn(2); // o
+		game.take_turn(2); // x
+		game.take_turn(4); // o
+		game.take_turn(2); // x
+		game.take_turn(4); // o
+		game.take_turn(2); // x
+		assert_eq!(game.take_turn(4), Ok(false)); // o
+		game.take_turn(2); // x -> invalid move error here
+		game.take_turn(3); // x
+		assert_eq!(game.take_turn(4), Ok(true)); // o -> win here
+		println!("{}", game);
+
 
 	}
 }
