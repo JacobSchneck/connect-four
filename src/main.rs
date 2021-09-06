@@ -80,10 +80,6 @@ fn play_game() {
 
             }
         }
-
-        // match line.as_str() {
-
-        // };
     }
 }
 
@@ -95,7 +91,6 @@ fn main() {
     loop {
         print!("> ");
         let line = get_line();
-        // let result = execute(line);
         match line.as_str() {
             "p" => play_game(),
             "q" => break,
