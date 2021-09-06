@@ -31,9 +31,15 @@ fn play_game() {
         if let Ok(col) = line.parse::<usize>(){
             match game.take_turn(col) {
                 Ok(res) => {
-                    exit_condition = res;
                     println!("\n{}", game);
-                    if res {
+
+                    if res.is_none() {
+                        exit_condition = true;
+                        println!("Wow, a draw! That never happens!!");
+                        println!("To play the game again please type: 'p' ");
+                        println!("To quit the game please type: 'q' \n");
+                    } else if res.unwrap() {
+                        exit_condition = true;
                         if game.turn() == Player::Red { 
                             let winner = Player::Black;
                             println!("Congratulations player {}, you won", winner);

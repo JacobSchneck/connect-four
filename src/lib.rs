@@ -40,7 +40,7 @@ impl ConnectFour {
 	}
 
 	// execute a move
-	pub fn take_turn(&mut self, col: usize) -> Result<bool, &str> {
+	pub fn take_turn(&mut self, col: usize) -> Result<Option<bool>, &str> {
 		// usize therefor cannot be negative :)
 		if col > self.board[0].len() - 1 {
 			return Err("Invalid move, try again...");
@@ -79,17 +79,20 @@ impl ConnectFour {
 		self.turn
 	}
 
-	fn check_win(&self) -> bool {
+	fn check_win(&self) -> Option<bool> {
+		let mut draw_flag = 0;
 		for row in (0..self.board.len()).rev() {
 			for col in (0..self.board[row].len()).rev() {
 				// if no piece found continue
 				if self.board[row][col].is_none() {
+					draw_flag += 1;
 					continue;
 				}
 
 				// piece that we are checking
 				// unwrap will not panic because already checked that is not none 
 				let piece = self.board[row][col].unwrap();
+				// draw_flag = false;
 
 				// PSUEDO CODE: 
 				// traverse diagonal, col, and row to find if win condition met
@@ -106,14 +109,16 @@ impl ConnectFour {
 				// lastly check if draw by checking if no None types are present
 
 				// Not very concise but it gets the job done
-				if self.check_col(piece, row, col) { return true; }
-				if self.check_row(piece, row, col) { return true }
-				if self.check_pos_diag(piece, row, col) { return true }
-				if self.check_neg_diag(piece, row, col) {return true }
+				if self.check_col(piece, row, col) { return Some(true) }
+				if self.check_row(piece, row, col) { return Some(true) }
+				if self.check_pos_diag(piece, row, col) { return Some(true) }
+				if self.check_neg_diag(piece, row, col) {return Some(true) }
 			}
 		}
 
-		false
+		// println!("{}", draw_flag);
+		// check for draw before returning false
+		if draw_flag == 0 { None } else { Some(false) }
 	}
 
 	fn check_col(&self, piece: Player, row: usize, col: usize) -> bool {
@@ -286,11 +291,11 @@ mod test_connect_four {
 	fn test_no_win() {
 		let mut game = ConnectFour::new();
 		println!("{}", game);
-		assert_eq!(game.take_turn(2), Ok(false)); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
 		game.take_turn(2); // x
 		game.take_turn(2); // o
 		game.take_turn(4); // x
-		assert_eq!(game.take_turn(3), Ok(false)); // o
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // o
 		game.take_turn(4); // x
 		game.take_turn(2); // x
 		game.take_turn(2); // o
@@ -308,8 +313,8 @@ mod test_connect_four {
 		game.take_turn(2); // o
 		game.take_turn(4); // x
 		game.take_turn(2); // o
-		assert_eq!(game.take_turn(4), Ok(false)); // x
-		assert_eq!(game.take_turn(2), Ok(true)); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(2), Ok(Some(true))); // o
 		println!("{}", game);
 
 		// does not go out of bounds
@@ -324,13 +329,11 @@ mod test_connect_four {
 		game.take_turn(2); // x
 		game.take_turn(4); // o
 		game.take_turn(2); // x
-		assert_eq!(game.take_turn(4), Ok(false)); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // o
 		game.take_turn(2); // x -> invalid move error here
 		game.take_turn(3); // x
-		assert_eq!(game.take_turn(4), Ok(true)); // o -> win here
+		assert_eq!(game.take_turn(4), Ok(Some(true))); // o -> win here
 		println!("{}", game);
-
-
 	}
 
 	#[test]
@@ -342,9 +345,9 @@ mod test_connect_four {
 		game.take_turn(0); // x
 		game.take_turn(1); // o
 		game.take_turn(1); // x
-		assert_eq!(game.take_turn(2), Ok(false)); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
 		game.take_turn(2); // x
-		assert_eq!(game.take_turn(3), Ok(true)); // o
+		assert_eq!(game.take_turn(3), Ok(Some(true))); // o
 		println!("{}", game);
 
 		// Slightly more complex
@@ -353,18 +356,18 @@ mod test_connect_four {
 		game.take_turn(0); // x
 		game.take_turn(1); // o
 		game.take_turn(1); // x
-		assert_eq!(game.take_turn(2), Ok(false)); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
 		game.take_turn(3); // x
-		assert_eq!(game.take_turn(3), Ok(false)); // o
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // o
 		game.take_turn(4); // x
-		assert_eq!(game.take_turn(5), Ok(false)); // o
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // o
 		game.take_turn(6); // x
 		assert_eq!(game.take_turn(7), Err("Invalid move, try again...")); // o
-		assert_eq!(game.take_turn(4), Ok(false)); // o
-		assert_eq!(game.take_turn(2), Ok(false)); // x
-		assert_eq!(game.take_turn(5), Ok(false)); // o
-		assert_eq!(game.take_turn(1), Ok(false)); // x
-		assert_eq!(game.take_turn(6), Ok(true)); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(6), Ok(Some(true))); // o
 		println!("{}", game);
 	}
 
@@ -381,8 +384,7 @@ mod test_connect_four {
 		game.take_turn(3); // x
 		game.take_turn(2); // o
 		game.take_turn(3); // x
-		// game.take_turn(3); // 0
-		assert_eq!(game.take_turn(3), Ok(true)); // o
+		assert_eq!(game.take_turn(3), Ok(Some(true))); // o
 		println!("{}", game);
 	}
 
@@ -399,7 +401,65 @@ mod test_connect_four {
 		game.take_turn(2); // x
 		game.take_turn(2); // o
 		game.take_turn(2); // x
-		assert_eq!(game.take_turn(3), Ok(true)); // o
+		assert_eq!(game.take_turn(3), Ok(Some(true))); // o
+		println!("{}", game);
+	}
+
+	#[test]
+	fn test_draw() {
+		let mut game = ConnectFour::new();
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(6), Ok(Some(false))); // o
+		println!("{}", game);
+
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(6), Ok(Some(false))); // x
+		println!("{}", game);
+
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(6), Ok(Some(false))); // o
+		println!("{}", game);
+
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(6), Ok(Some(false))); // o
+		println!("{}", game);
+
+		assert_eq!(game.take_turn(0), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(6), Ok(Some(false))); // x
+		println!("{}", game);
+		
+		assert_eq!(game.take_turn(1), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(2), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(3), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(4), Ok(Some(false))); // x
+		assert_eq!(game.take_turn(5), Ok(Some(false))); // o
+		assert_eq!(game.take_turn(6), Ok(None)); // x
 		println!("{}", game);
 	}
 }
