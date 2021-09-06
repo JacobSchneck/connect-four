@@ -11,7 +11,7 @@ type Board = Vec<Vec<Option<Player>>>;
 
 /// Simple enum, so deriving Clone, Copy will not incur a performance cost
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum Player {
+pub enum Player {
 	Red, // matches to char 'o'
 	Black, // matches to char 'x'
 }
@@ -31,6 +31,7 @@ pub struct ConnectFour {
 }
 
 impl ConnectFour {
+	// construct a new game
 	pub fn new() -> Self {
 		ConnectFour {
 			board: vec![vec![None; 7]; 6],
@@ -38,7 +39,13 @@ impl ConnectFour {
 		}
 	}
 
+	// execute a move
 	pub fn take_turn(&mut self, col: usize) -> Result<bool, &str> {
+		// usize therefor cannot be negative :)
+		if col > self.board[0].len() - 1 {
+			return Err("Invalid move, try again...");
+		}
+
 		let mut flag = false;
 		for i in (0..self.board.len()).rev() {
 			if self.board[i][col].is_some() {
@@ -55,11 +62,21 @@ impl ConnectFour {
 		}
 
 		if !flag {
-			Err("Invalid move, try again... ")
+			Err("Invalid move, try again...")
 		} else {
 			Ok(self.check_win())
 		}
-		
+	}
+	
+	// reset game
+	pub fn reset(&mut self) {
+		self.board = vec![vec![None; 7]; 6]; 		
+		self.turn = Player::Red;
+	}
+
+	// Get whose turn it is. 
+	pub fn turn(&self) -> Player {
+		self.turn
 	}
 
 	fn check_win(&self) -> bool {
@@ -74,6 +91,7 @@ impl ConnectFour {
 				// unwrap will not panic because already checked that is not none 
 				let piece = self.board[row][col].unwrap();
 
+				// PSUEDO CODE: 
 				// traverse diagonal, col, and row to find if win condition met
 				// diagonal --> (row + 1, col + 1), (row + 1, col - 1), (row - 1, col + 1), (row - 1, col - 1)
 				// two directions:
@@ -87,17 +105,14 @@ impl ConnectFour {
 				//		if next piece matches prev	
 				// lastly check if draw by checking if no None types are present
 
-				
-				// TODO: Implement each directional check (consider placing in seperate util file)
+				// Not very concise but it gets the job done
 				if self.check_col(piece, row, col) { return true; }
 				if self.check_row(piece, row, col) { return true }
-				// if self_check_pos_diag(piece, row, col) {return true }
-				// if self_check_neg_diag(piece, row, col) {return true }
-
+				if self.check_pos_diag(piece, row, col) { return true }
+				if self.check_neg_diag(piece, row, col) {return true }
 			}
 		}
 
-		// unimplemented!();
 		false
 	}
 
@@ -166,18 +181,74 @@ impl ConnectFour {
 	}
 
 	fn check_pos_diag(&self, piece: Player, row: usize, col: usize) -> bool {
-		unimplemented!();
+		// 	pos diagonal = [(row + 1, col - 1), (row - 1, col + 1)]
+		let mut ct = 1;
+
+		// up diag 
+		for i in 1..=3 {
+			if row + i > self.board.len() - 1 || 
+				(col as i32- i as i32) < 0 || 
+				self.board[row + i][col - i].is_none() ||
+				self.board[row + i][col - i].unwrap() != piece {
+				break;
+			}
+			ct += 1;
+		}
+
+		// down diag
+		for i in 1..=3 {
+			if (row as i32 - i as i32) < 0 || 
+				col + i > self.board[row].len() - 1 || 
+				self.board[row - i][col + i].is_none() ||
+				self.board[row - i][col + i].unwrap() != piece {
+				break;
+			}
+			ct += 1;
+		}
+
+		if ct >= 4 {
+			true
+		} else {
+			false
+		}
+
+		// unimplemented!();
 	}
 
 	fn check_neg_diag(&self, piece: Player, row: usize, col: usize) -> bool {
-		unimplemented!();
+		//    neg diagonal = [(row + 1, col + 1), (row -1, col - 1)]
+		let mut ct = 1;
+
+		// up diag 
+		for i in 1..=3 {
+			if row + i > self.board.len() - 1 || 
+				col + i > self.board[row].len() - 1 || 
+				self.board[row + i][col + i].is_none() ||
+				self.board[row + i][col + i].unwrap() != piece {
+				break;
+			}
+			ct += 1;
+		}
+
+		// down diag
+		for i in 1..=3 {
+			if (row as i32 - i as i32) < 0 || 
+				(col as i32 - i as i32) < 0 || 
+				self.board[row - i][col - i].is_none() ||
+				self.board[row - i][col - i].unwrap() != piece {
+				break;
+			}
+			ct += 1;
+		}
+
+		if ct >= 4 {
+			true
+		} else {
+			false
+		}
+
 	}
 
-
-	fn reset(&mut self) {
-		self.board = vec![vec![None; 7]; 6]; 		
-		self.turn = Player::Red;
-	}
 }
 
 impl fmt::Display  for ConnectFour {
@@ -224,7 +295,7 @@ mod test_connect_four {
 		game.take_turn(2); // x
 		game.take_turn(2); // o
 		game.take_turn(2); // x
-		assert_eq!(game.take_turn(2), Err("Invalid move, try again... ")); // o
+		assert_eq!(game.take_turn(2), Err("Invalid move, try again...")); // o
 	}
 
 	#[test]
@@ -260,5 +331,75 @@ mod test_connect_four {
 		println!("{}", game);
 
 
+	}
+
+	#[test]
+	fn test_row_win() {
+		let mut game = ConnectFour::new();
+
+		// simple test first
+		game.take_turn(0); // o
+		game.take_turn(0); // x
+		game.take_turn(1); // o
+		game.take_turn(1); // x
+		assert_eq!(game.take_turn(2), Ok(false)); // o
+		game.take_turn(2); // x
+		assert_eq!(game.take_turn(3), Ok(true)); // o
+		println!("{}", game);
+
+		// Slightly more complex
+		game.reset();
+		game.take_turn(0); // o
+		game.take_turn(0); // x
+		game.take_turn(1); // o
+		game.take_turn(1); // x
+		assert_eq!(game.take_turn(2), Ok(false)); // o
+		game.take_turn(3); // x
+		assert_eq!(game.take_turn(3), Ok(false)); // o
+		game.take_turn(4); // x
+		assert_eq!(game.take_turn(5), Ok(false)); // o
+		game.take_turn(6); // x
+		assert_eq!(game.take_turn(7), Err("Invalid move, try again...")); // o
+		assert_eq!(game.take_turn(4), Ok(false)); // o
+		assert_eq!(game.take_turn(2), Ok(false)); // x
+		assert_eq!(game.take_turn(5), Ok(false)); // o
+		assert_eq!(game.take_turn(1), Ok(false)); // x
+		assert_eq!(game.take_turn(6), Ok(true)); // o
+		println!("{}", game);
+	}
+
+	#[test]
+	fn test_pos_diag_win() {
+		let mut game = ConnectFour::new();
+		game.take_turn(0); // o
+		game.take_turn(1); // x
+		game.take_turn(1); // o
+		game.take_turn(2); // x
+		game.take_turn(2); // o
+		game.take_turn(3); // x
+		game.take_turn(2); // o
+		game.take_turn(3); // x
+		game.take_turn(2); // o
+		game.take_turn(3); // x
+		// game.take_turn(3); // 0
+		assert_eq!(game.take_turn(3), Ok(true)); // o
+		println!("{}", game);
+	}
+
+	#[test]
+	fn test_neg_diag_win() {
+		let mut game = ConnectFour::new();
+		game.take_turn(0); // o
+		game.take_turn(0); // x
+		game.take_turn(0); // o
+		game.take_turn(1); // x
+		game.take_turn(0); // o
+		game.take_turn(1); // x
+		game.take_turn(1); // o
+		game.take_turn(2); // x
+		game.take_turn(2); // o
+		game.take_turn(2); // x
+		assert_eq!(game.take_turn(3), Ok(true)); // o
+		println!("{}", game);
 	}
 }

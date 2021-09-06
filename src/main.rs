@@ -32,7 +32,7 @@ fn play_game() {
             match game.take_turn(col) {
                 Ok(res) => {
                     exit_condition = res;
-                    println!("{}", game);
+                    println!("\n{}", game);
                     if res {
                         if game.turn() == Player::Red { 
                             let winner = Player::Black;
@@ -42,7 +42,7 @@ fn play_game() {
                             println!("Congratulations player {}, you won\n ", winner);
                         }
                         println!("To play the game again please type: 'p' ");
-                        println!("To quit the game please type: 'q' ");
+                        println!("To quit the game please type: 'q' \n");
                     }
                 },
                 Err(e) => eprintln!("{}", e),
@@ -56,9 +56,18 @@ fn play_game() {
                     println!("To quit the game altogether please type: 'q' ");
 
                 },
+                "r" => {
+                    game.reset();
+                    println!("Instructions: ");
+                    println!("Enter a number 0 - 6 to place a piece");
+                    println!("To exit the game enter 'q'");
+                    println!("Lets get Started!\n");
+                    println!("{}", game);
+                }, 
                 "help" => {
                     println!("\nInstructions: ");
                     println!("Enter a number 0 - 6 to place a piece");
+                    println!("To reset the game enter 'r'");
                     println!("To exit the game enter 'q'\n");
                 }
                 _ => println!("Sorry, command does not exist. Please type: 'help' for help."),
